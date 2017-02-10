@@ -3,7 +3,7 @@ from bokeh.models import (Range1d, Circle, ColumnDataSource)
 from bokeh.plotting import figure, curdoc
 from bokeh.tile_providers import STAMEN_TONER
 from bokeh.layouts import row
-from bokeh.models.widgets import Select
+from bokeh.models.widgets import RadioGroup
 
 import pandas as pd
 
@@ -24,7 +24,8 @@ data_urls = {
 
 def make_plot():
     # Load data
-    data = pd.read_csv(data_urls[select.value])
+    selected_source = sorted(data_urls)[select.active]
+    data = pd.read_csv(data_urls[selected_source])
 
     # Convert EPSG code
     p1 = Proj(init='epsg:4326')  # this is the EPSG code of the original
@@ -57,10 +58,11 @@ def update(attr, old, new):
     r1.children[1] = make_plot()
 
 menu = [(k, k) for k in data_urls.keys()]
-select = Select(title='Select data source', value=list(data_urls.keys())[0],
-                options=sorted(data_urls.keys()), callback=update)
+select = RadioGroup(active=0,
+                    labels=sorted(data_urls.keys()))
+select.on_change('active', update)
 
 r1 = row(select, make_plot())
 
 curdoc().add_root(r1)
-curdoc().title = "Qualitative Variable Explorer"
+curdoc().title = "Boston Geo Data Explorer"
