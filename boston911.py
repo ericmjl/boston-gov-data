@@ -5,7 +5,9 @@ from bokeh.models.widgets import CheckboxGroup, Button
 from bokeh.charts import Line
 from bokeh.plotting import curdoc
 
-df = pd.read_csv('https://data.boston.gov/dataset/17129fad-fff9-4eac-ad74-51fb4bf63c22/resource/2459542e-7026-48e2-9128-ca29dd3bebf8/download/911-daily-dispatch-count-by-agency.csv',
+df = pd.read_csv('https://data.boston.gov/dataset/17129fad-fff9-4eac-ad74-51fb\
+                    4bf63c22/resource/2459542e-7026-48e2-9128-ca29dd3bebf8/\
+                    download/911-daily-dispatch-count-by-agency.csv',
                  parse_dates=['Date'])
 print(df.columns)
 output_cols = [i for i in df.columns][4:]
