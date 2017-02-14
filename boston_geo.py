@@ -3,9 +3,11 @@ from bokeh.models import (Range1d, Circle, ColumnDataSource)
 from bokeh.plotting import figure, curdoc
 from bokeh.tile_providers import STAMEN_TONER
 from bokeh.layouts import row
-from bokeh.models.widgets import RadioGroup
+from bokeh.plotting import show
+from bokeh.models.widgets import RadioGroup, Select
 
 import pandas as pd
+import requests
 
 data_urls = {
     'Water Sprays': 'http://bostonopendata-boston.opendata.arcgis.com/datasets/5409b7735d384798b2a360aa47c9b128_0.csv',
@@ -21,11 +23,14 @@ data_urls = {
     'Hubway Stations': 'http://bostonopendata-boston.opendata.arcgis.com/datasets/ee7474e2a0aa45cbbdfe0b747a5eb032_0.csv',
 }
 
+src = ColumnDataSource()
+
 
 def make_plot():
     # Load data
-    selected_source = sorted(data_urls)[select.active]
-    data = pd.read_csv(data_urls[selected_source])
+    # selected_source = sorted(data_urls)[select.active]
+    # data = pd.read_csv(data_urls[selected_source])
+    data = pd.read_csv(data_urls[select.value])
 
     # Convert EPSG code
     p1 = Proj(init='epsg:4326')  # this is the EPSG code of the original
@@ -35,12 +40,13 @@ def make_plot():
     data['X'], data['Y'] = (zip(*transformed_coords))
 
     # Convert to coordinates
-    src = ColumnDataSource(data)
+    src.data['X'] = data['X']
+    src.data['Y'] = data['Y']
 
     # Set x-range and y-range of map
-    x_range = Range1d(start=data['X'].min(), end=data['X'].max(),
+    x_range = Range1d(start=min(src.data['X']), end=max(src.data['X']),
                       bounds=None)
-    y_range = Range1d(start=data['Y'].min(), end=data['Y'].max(),
+    y_range = Range1d(start=min(src.data['Y']), end=max(src.data['Y']),
                       bounds=None)
 
     # Plot figure
@@ -50,17 +56,38 @@ def make_plot():
                    fill_color="blue")
     p.add_glyph(src, circs)
     p.add_tile(STAMEN_TONER)
-
     return p
 
 
 def update(attr, old, new):
     r1.children[1] = make_plot()
 
-menu = [(k, k) for k in data_urls.keys()]
-select = RadioGroup(active=0,
-                    labels=sorted(data_urls.keys()))
-select.on_change('active', update)
+
+def update_data(attr, old, new):
+    # Load data
+    # selected_source = sorted(data_urls)[select.active]
+    # data = pd.read_csv(data_urls[selected_source])
+    data = pd.read_csv(data_urls[select.value])
+
+    # Convert EPSG code
+    p1 = Proj(init='epsg:4326')  # this is the EPSG code of the original
+    p2 = Proj(init='epsg:3857')  # this is the EPSG code of the tiles
+    transformed_coords = [transform(p1, p2, x1, y1)
+                          for x1, y1 in zip(data['X'], data['Y'])]
+    data['X'], data['Y'] = (zip(*transformed_coords))
+
+    # Convert to coordinates
+    new_data = {'X': data['X'], 'Y': data['Y']}
+    src.data = new_data
+
+# menu = [(k, k) for k in data_urls.keys()]
+# select = RadioGroup(active=0,
+#                     labels=sorted(data_urls.keys()))
+# select.on_change('active', update)
+
+menu = sorted(data_urls.keys())
+select = Select(title='Dataset', value=menu[3], options=menu)
+select.on_change('value', update_data)
 
 r1 = row(select, make_plot())
 
